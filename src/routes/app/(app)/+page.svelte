@@ -13,6 +13,7 @@
 	let pickerWindow = $state<WebviewWindow>()
 
 	let max_input: HTMLInputElement;
+	// svelte-ignore state_referenced_locally
 	const clickingStore = writable($state.snapshot(clicking)); // I had no idea how to do it otherwise
 	$effect(() => {
 		clickingStore.set(clicking)
@@ -34,7 +35,7 @@
 		clicking = false
 	})
 	
-
+	// @ts-expect-error: config.mode can only be either fixed or random
 	const getTime = (): number => {
 		if (config.mode === 'fixed') {
 			const minutes = config.options_for_fixed.m + config.options_for_fixed.h * 60;

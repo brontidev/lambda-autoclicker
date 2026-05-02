@@ -1,4 +1,4 @@
-<script lang=ts>
+<script lang="ts">
     import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow"
     import { getVersion } from "@tauri-apps/api/app"
 	import { onMount } from "svelte";

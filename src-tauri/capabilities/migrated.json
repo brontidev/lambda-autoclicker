@@ -19,12 +19,9 @@
     "core:window:allow-set-minimizable",
     "shell:allow-open",
     "shell:default",
-    "updater:default",
     "core:webview:allow-create-webview-window",
     "core:window:allow-unminimize",
-    "global-shortcut:allow-is-registered",
-    "global-shortcut:allow-register",
-    "global-shortcut:allow-unregister",
-    "global-shortcut:allow-unregister-all"
+    "updater:default",
+    "global-shortcut:default"
   ]
 }
