@@ -1,11 +1,7 @@
-# Lambda AutoClicker
+# Tauri + SvelteKit + TypeScript
 
+This template should help get you started developing with Tauri, SvelteKit and TypeScript in Vite.
 
-# Features
- - ~~Saved Data~~
- - Ability to pick a spot on the screen
- - Clicker (obviously)
- - Random interval timer
- - Fixed interval timer
- - Double clicking
- - Updating (REMEMBER TO CHECK ~/.tauri/lambautoclicker.key!!!!!!!)
+## Recommended IDE Setup
+
+[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).

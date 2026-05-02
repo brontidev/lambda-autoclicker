@@ -1,8 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
-
 @import 'tailwindcss';
-
-@plugin "@tailwindcss/typography";
 @plugin 'daisyui';
 
 
@@ -40,26 +36,3 @@
   --depth: 0;
   --noise: 0;
 }
-
-@theme {
-    --font-appbartop: "Bebas Neue", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
-#app {
-    @apply contents !h-full overflow-hidden
-}
-
-body, html {
-    @apply !h-full overflow-hidden
-}
-
-body {
-    @apply border border-base-content
-}
-
-* { @apply cursor-default }
-input { @apply !cursor-auto }
-button { @apply !cursor-pointer [&>*]:!cursor-pointer }
-input[type=checkbox], input[type=radio] { @apply !cursor-pointer }
-a { @apply cursor-pointer [&>*]:!cursor-pointer }
