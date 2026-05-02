@@ -12,6 +12,10 @@
         "@tauri-apps/plugin-updater": "~2",
       },
       "devDependencies": {
+        "@statesync/core": "^1.1.0",
+        "@statesync/persistence": "^2.0.0",
+        "@statesync/svelte": "^2.0.0",
+        "@statesync/tauri": "^2.0.0",
         "@sveltejs/adapter-static": "^3.0.6",
         "@sveltejs/kit": "^2.9.0",
         "@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -142,6 +146,14 @@
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.60.2", "", { "os": "win32", "cpu": "x64" }, "sha512-Nd/SgG27WoA9e+/TdK74KnHz852TLa94ovOYySo/yMPuTmpckK/jIF2jSwS3g7ELSKXK13/cVdmg1Z/DaCWKxA=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
+
+    "@statesync/core": ["@statesync/core@1.1.0", "", {}, "sha512-/DsNO+jir3isnIbj18QglQNgBBZXRwjmB0MY7/SU0VOnDMxKHGFCfDMS+eELwCvJIEBIdpr5XIfBjE/rzBLGyg=="],
+
+    "@statesync/persistence": ["@statesync/persistence@2.0.0", "", { "peerDependencies": { "@statesync/core": "^1.1.0" } }, "sha512-RS+YNIzXTRvArt7njU8tVMwHq6l3NC6wtSgDgRQGQHn/Ny1dsq6xNrjrjvfMWrwkwM15zpT+CEe9Y6wGPFhtOg=="],
+
+    "@statesync/svelte": ["@statesync/svelte@2.0.0", "", { "peerDependencies": { "@statesync/core": "^1.1.0" } }, "sha512-A9QNKZkNogM/oXKilc+j+LqZACYwaaFoZSe0hx9XSjDHlEzqv5U05o8X/LlZCPPUeO9JQ50vloSeH40j+AzpbA=="],
+
+    "@statesync/tauri": ["@statesync/tauri@2.0.0", "", { "peerDependencies": { "@statesync/core": "^1.1.0", "@tauri-apps/api": ">=2" }, "optionalPeers": ["@tauri-apps/api"] }, "sha512-0tupGyRFA4DkMfkyPmKtDfwstO4AYahnrGzBzZ2ONDnBGdgjH/oxBeydzOz67JcMDjIJYASNMCHL2LYTz9Zmyw=="],
 
     "@sveltejs/acorn-typescript": ["@sveltejs/acorn-typescript@1.0.9", "", { "peerDependencies": { "acorn": "^8.9.0" } }, "sha512-lVJX6qEgs/4DOcRTpo56tmKzVPtoWAaVbL4hfO7t7NVwl9AAXzQR6cihesW1BmNMPl+bK6dreu2sOKBP2Q9CIA=="],
 

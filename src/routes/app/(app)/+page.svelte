@@ -3,127 +3,39 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import Radio from "$lib/Radio.svelte";
   import {
-    getCurrentWebviewWindow,
-    WebviewWindow,
-  } from "@tauri-apps/api/webviewWindow";
-  import { get, writable } from "svelte/store";
-  import { invoke } from "@tauri-apps/api/core";
-  import { onMount } from "svelte";
-  import {
     register,
     unregister,
     type ShortcutEvent,
   } from "@tauri-apps/plugin-global-shortcut";
-  const appWindow = getCurrentWebviewWindow();
-  let clicking = $state(false);
-  let picking = $state(false);
-  let pickerWindow = $state<WebviewWindow>();
+
+  import config from "$lib/settings.svelte";
+  import {
+    interval_mode_to_string,
+    string_to_interval_mode,
+    repeat_mode_to_string,
+    string_to_repeat_mode,
+    click_button_to_string,
+    string_to_click_button,
+    click_quantity_to_string,
+    string_to_click_quantity,
+  } from "$lib/types/settings";
+  import { invoke } from "@tauri-apps/api/core";
+  import clicking from "$lib/clicking.svelte";
 
   let max_input: HTMLInputElement;
-  // svelte-ignore state_referenced_locally
-  const clickingStore = writable($state.snapshot(clicking)); // I had no idea how to do it otherwise
-  $effect(() => {
-    clickingStore.set(clicking);
-  });
-  clickingStore.subscribe(async (v) => {
-    if (v) {
-      let timesLeft =
-        config.repeat_type == "number" ? config.repeat_x_count : Infinity;
-      for (;;) {
-        if (config.do_mouse_pos) {
-          await invoke("set_mouse_pos", {
-            location: [config.mouse_pos.x, config.mouse_pos.y],
-          });
-        }
-        await invoke("mouse_button", {
-          double: config.backend__double,
-          button: config.backend__button,
-        });
-        console.log("click");
-        timesLeft--;
-        if (!get(clickingStore) || timesLeft == 0) {
-          break;
-        }
-        await waitForTimeOrStop();
-      }
-    }
-    clicking = false;
-  });
-
-  // @ts-expect-error: config.mode can only be either fixed or random
-  const getTime = (): number => {
-    if (config.mode === "fixed") {
-      const minutes =
-        config.options_for_fixed.m + config.options_for_fixed.h * 60;
-      const seconds = config.options_for_fixed.s + minutes * 60;
-      return config.options_for_fixed.ms + seconds * 1000;
-    } else if (config.mode === "random") {
-      return (
-        Math.floor(
-          Math.random() *
-            (config.options_for_random.max - config.options_for_random.min + 1),
-        ) + config.options_for_random.min
-      );
-    }
-  };
-  const waitForTimeOrStop = async () => {
-    return new Promise<void>((res, rej) => {
-      const timeout = setTimeout(() => {
-        res();
-        stop();
-      }, getTime());
-      const unsub = clickingStore.subscribe((v) => {
-        if (v == false) {
-          stop();
-          rej();
-        }
-      });
-
-      function stop() {
-        unsub();
-        clearTimeout(timeout);
-      }
-    });
-  };
 
   const fixMinMax = () => {
     if (
-      config.options_for_random.min >= config.options_for_random.max &&
+      config.current.interval_rand_options.min >= config.current.interval_rand_options.max &&
       document.activeElement !== max_input
     ) {
-      config.options_for_random.max = config.options_for_random.min + 1;
+      config.current.interval_rand_options.max = config.current.interval_rand_options.min + 1;
     }
   };
   $effect(fixMinMax);
 
   async function openPicker() {
-    pickerWindow = new WebviewWindow("picker", {
-      url: "/app/picker",
-      transparent: true,
-      acceptFirstMouse: true,
-      decorations: false,
-      x: 0,
-      y: 0,
-      closable: false,
-      alwaysOnTop: true,
-      minimizable: false,
-      resizable: false,
-    });
-    await pickerWindow.once("tauri://webview-created", async (_) => {
-      picking = true;
-      await appWindow.minimize();
-      pickerWindow?.listen("loaded", async () => {
-        await pickerWindow?.emit("setkeybind", config.picker_keybind);
-      });
-    });
-    await pickerWindow.once("tauri://destroyed", async (_) => {
-      picking = false;
-      await appWindow.unminimize();
-      pickerWindow = undefined;
-    });
-    await pickerWindow.listen<[number, number]>("mouse-val", async (e) => {
-      config.mouse_pos = { x: e.payload[0], y: e.payload[1] };
-    });
+    invoke("open_picker")
   }
 
   function fixedAnchor(a: HTMLAnchorElement) {
@@ -134,108 +46,10 @@
   }
 
   function disabledCandidate(value: boolean = false) {
-    return picking || clicking || value;
+    return clicking.is_clicking || value;
   }
 
-  class SavedState {
-    mode = $state<"random" | "fixed">("random");
-    options_for_fixed = $state({ h: 0, m: 0, s: 0, ms: 0 });
-    options_for_random = $state({ min: 0, max: 0 });
-
-    repeat_type = $state<"forever" | "number">("forever");
-    repeat_x_count = $state(10);
-    button = $state<"left" | "middle" | "right">("left");
-    quantity = $state<"single" | "double">("single");
-
-    do_mouse_pos = $state(false);
-    mouse_pos = $state({ x: 0, y: 0 });
-
-    backend__double = $derived(this.quantity === "double");
-    backend__button = $derived.by(() => {
-      if (this.button === "left") return 0;
-      else if (this.button === "middle") return 1;
-      else if (this.button === "right") return 2;
-    });
-
-    main_keybind = $state("Alt+C");
-    picker_keybind = $state("K");
-
-    constructor() {
-      let first = true;
-      $effect(() => {
-        if (first) {
-          const loaded_x_count = localStorage.getItem("repeat_count");
-          const loaded_fixed_options = localStorage.getItem("fixed");
-          const loaded_random_options = localStorage.getItem("random");
-          const loaded_mouse_pos = localStorage.getItem("pos");
-          const loaded_do_mouse_pos = localStorage.getItem("use_mouse_pos");
-
-          this.mode = localStorage.getItem("mode") || this.mode;
-          this.options_for_fixed = loaded_fixed_options
-            ? JSON.parse(loaded_fixed_options)
-            : this.options_for_fixed;
-          this.options_for_random = loaded_random_options
-            ? JSON.parse(loaded_random_options)
-            : this.options_for_random;
-
-          this.repeat_x_count = loaded_x_count
-            ? JSON.parse(loaded_x_count)
-            : this.repeat_x_count;
-
-          this.repeat_type =
-            localStorage.getItem("repeat_type") || this.repeat_type;
-          this.button = localStorage.getItem("mouse_button") || this.button;
-          this.quantity = localStorage.getItem("quantity") || this.quantity;
-
-          this.mouse_pos = loaded_mouse_pos
-            ? JSON.parse(loaded_mouse_pos)
-            : this.mouse_pos;
-          this.do_mouse_pos = loaded_do_mouse_pos
-            ? JSON.parse(loaded_do_mouse_pos)
-            : this.do_mouse_pos;
-
-          first = false;
-        }
-        localStorage.setItem("mode", this.mode);
-        localStorage.setItem("fixed", JSON.stringify(this.options_for_fixed));
-        localStorage.setItem("random", JSON.stringify(this.options_for_random));
-
-        localStorage.setItem("repeat_type", this.repeat_type);
-        localStorage.setItem(
-          "repeat_count",
-          JSON.stringify(this.repeat_x_count),
-        );
-        localStorage.setItem("mouse_button", this.button);
-        localStorage.setItem("quantity", this.quantity);
-        localStorage.setItem("pos", JSON.stringify(this.mouse_pos));
-
-        localStorage.setItem(
-          "use_mouse_pos",
-          JSON.stringify(this.do_mouse_pos),
-        );
-      });
-    }
-  }
-  let config = new SavedState();
-
-  let prev_main_kb = config.main_keybind;
-  let prev_picker_kb = config.picker_keybind;
-  let lastPKB_press: Date | null = null;
   let lastMKB_press: Date | null = null;
-
-  function toggleClicking() {
-    clicking = !clicking;
-  }
-  function picker_kb(e: ShortcutEvent) {
-    if (e.state === "Pressed") lastPKB_press = new Date();
-    if (
-      e.state === "Released" &&
-      new Date().getTime() - lastPKB_press?.getTime()! <= 500 &&
-      pickerWindow
-    ) {
-      pickerWindow.emit("keybind");
-    }
-  }
 
   function main_kb(e: ShortcutEvent) {
     if (e.state === "Pressed") lastMKB_press = new Date();
@@ -243,47 +57,43 @@
       e.state === "Released" &&
       new Date().getTime() - lastMKB_press?.getTime()! <= 500
     ) {
-      toggleClicking();
+      clicking.toggle()
     }
   }
 
   $effect(() => {
-    register(config.main_keybind, main_kb).catch((r) => {
-      console.log(r);
-    });
-    prev_main_kb = config.main_keybind;
+    register("Alt+C", main_kb)
     return () => {
-      unregister(prev_main_kb);
+      unregister("Alt+C");
     };
   });
-  $effect(() => {
-    if (picking) {
-      register(config.picker_keybind, picker_kb);
-      register("ESC", (e) => {
-        if (e.state === "Pressed") {
-          pickerWindow?.close();
-        }
-      });
-    } else {
-      unregister(prev_picker_kb);
-      unregister("ESC");
-    }
-    prev_picker_kb = config.picker_keybind;
-    return () => {
-      unregister(prev_picker_kb);
-      unregister("ESC");
-    };
-  });
+  // $effect(() => {
+  //   if (picking) {
+  //     register("K", picker_kb);
+  //     register("ESC", (e) => {
+  //       if (e.state === "Pressed") {
+  //         pickerWindow?.close();
+  //       }
+  //     });
+  //   } else {
+  //     unregister("K");
+  //     unregister("ESC");
+  //   }
+  //   return () => {
+  //     unregister("K");
+  //     unregister("ESC");
+  //   };
+  // });
 </script>
 
 <div
   id="section-click-interval"
-  class="bg-base-200 h-48 rounded-box px-1 flex flex-col pb-1"
+  class="bg-base-200/50 h-48 rounded-box px-1 flex flex-col pb-1"
 >
   <span class="text-neutral-content uppercase font-appbartop ml-1"
     ><span class="border-b">click interval</span></span
   >
-  <Tabs disabled={disabledCandidate()} bind:tab={config.mode}>
+  <Tabs disabled={disabledCandidate()} bind:tab={() => interval_mode_to_string(config.current.interval_mode), (v) => config.current.interval_mode = string_to_interval_mode(v)}>
     {#snippet _random()}
       <div id="tab-random-click-interval" class="flex flex-col grow">
         <div class="join w-max">
@@ -294,7 +104,7 @@
               disabled={disabledCandidate()}
               type="number"
               min="0"
-              bind:value={config.options_for_random.min}
+              bind:value={config.current.interval_rand_options.min}
             />ms
           </label>
           <label
@@ -304,9 +114,9 @@
               disabled={disabledCandidate()}
               bind:this={max_input}
               type="number"
-              min={config.options_for_random.min + 1}
+              min={config.current.interval_rand_options.min + 1}
               onchange={fixMinMax}
-              bind:value={config.options_for_random.max}
+              bind:value={config.current.interval_rand_options.max}
             />ms
           </label>
         </div>
@@ -328,7 +138,7 @@
                 class="grow"
                 type="number"
                 min="0"
-                bind:value={config.options_for_fixed.h}
+                bind:value={config.current.interval_fixed_options.hours}
               />h
             </label>
             <label
@@ -339,7 +149,7 @@
                 class="grow"
                 type="number"
                 min="0"
-                bind:value={config.options_for_fixed.m}
+                bind:value={config.current.interval_fixed_options.minutes}
               />m
             </label>
             <label
@@ -350,7 +160,7 @@
                 class="grow"
                 type="number"
                 min="0"
-                bind:value={config.options_for_fixed.s}
+                bind:value={config.current.interval_fixed_options.seconds}
               />s
             </label>
             <label
@@ -361,7 +171,7 @@
                 class="grow"
                 type="number"
                 min="0"
-                bind:value={config.options_for_fixed.ms}
+                bind:value={config.current.interval_fixed_options.milliseconds}
               />ms
             </label>
           </div>
@@ -377,7 +187,7 @@
 
 <div
   id="section-mouse-position"
-  class="bg-base-200 flex flex-row pl-1 pr-2 mt-2 gap-x-2 h-10 items-center rounded-box"
+  class="bg-base-200/50 flex flex-row pl-1 pr-2 mt-2 gap-x-2 h-10 items-center rounded-box"
 >
   <span class="text-neutral-content uppercase font-appbartop ml-1 mb-1"
     ><span class="border-b">mouse position</span></span
@@ -385,35 +195,35 @@
   <input
     type="checkbox"
     disabled={disabledCandidate()}
-    bind:checked={config.do_mouse_pos}
+    bind:checked={config.current.set_mouse_position}
     class="checkbox checkbox-primary"
   />
   <div class="join">
     <label
-      class:input-disabled={disabledCandidate(!config.do_mouse_pos)}
+      class:input-disabled={disabledCandidate(!config.current.set_mouse_position)}
       class="input input-xs input-bordered items-center gap-2 join-item"
     >
       x <input
-        disabled={disabledCandidate(!config.do_mouse_pos)}
+        disabled={disabledCandidate(!config.current.set_mouse_position)}
         type="number"
         min="0"
-        bind:value={config.mouse_pos.x}
+        bind:value={config.current.mouse_position.x}
       />
     </label>
     <label
-      class:input-disabled={disabledCandidate(!config.do_mouse_pos)}
+      class:input-disabled={disabledCandidate(!config.current.set_mouse_position)}
       class="input input-xs input-bordered items-center gap-2 join-item"
     >
       y <input
-        disabled={disabledCandidate(!config.do_mouse_pos)}
+        disabled={disabledCandidate(!config.current.set_mouse_position)}
         type="number"
         min="0"
-        bind:value={config.mouse_pos.y}
+        bind:value={config.current.mouse_position.y}
       />
     </label>
   </div>
   <button
-    disabled={disabledCandidate(!config.do_mouse_pos)}
+    disabled={disabledCandidate(!config.current.set_mouse_position)}
     onclick={openPicker}
     class="btn btn-xs btn-primary grow uppercase">pick</button
   >
@@ -422,36 +232,36 @@
 <div id="click-options" class="grid grid-cols-2 gap-x-2 mt-2 h-28">
   <div
     id="section-click-type"
-    class="flex flex-col pl-1 bg-base-200 rounded-box"
+    class="flex flex-col pl-1 bg-base-200/50 rounded-box"
   >
     <span class="text-neutral-content uppercase font-appbartop ml-1 mb-1"
       ><span class="border-b">click type</span></span
     >
-    <Tabs disabled={disabledCandidate()} bind:tab={config.button}>
+    <Tabs disabled={disabledCandidate()} bind:tab={() => click_button_to_string(config.current.click_button), (v) => config.current.click_button = string_to_click_button(v)}>
       {#snippet _left()}{/snippet}
       {#snippet _middle()}{/snippet}
       {#snippet _right()}{/snippet}
     </Tabs>
-    <Tabs disabled={disabledCandidate()} bind:tab={config.quantity}>
+    <Tabs disabled={disabledCandidate()} bind:tab={() => click_quantity_to_string(config.current.click_quantity), (v) => config.current.click_quantity = string_to_click_quantity(v)}>
       {#snippet _single()}{/snippet}
       {#snippet _double()}{/snippet}
     </Tabs>
   </div>
-  <div id="section-repeat" class="bg-base-200 pl-1 flex flex-col rounded-box">
+  <div id="section-repeat" class="bg-base-200/50 pl-1 flex flex-col rounded-box">
     <span class="text-neutral-content uppercase font-appbartop ml-1 mb-1"
       ><span class="border-b">repeat</span></span
     >
-    <Radio disabled={disabledCandidate()} bind:value={config.repeat_type}>
+    <Radio disabled={disabledCandidate()} bind:value={() => repeat_mode_to_string(config.current.repeat_mode), (v) => config.current.repeat_mode = string_to_repeat_mode(v)}>
       {#snippet _forever()}
         Until Stopped
       {/snippet}
-      {#snippet _number(checked)}
+      {#snippet _count(checked)}
         <input
           class="input input-xs input-bordered"
           type="number"
           min="0"
           disabled={disabledCandidate(!checked)}
-          bind:value={config.repeat_x_count}
+          bind:value={config.current.repeat_count}
         /> Times
       {/snippet}
     </Radio>
@@ -460,11 +270,11 @@
 
 <div
   id="main-buttons"
-  class="grid grid-cols-2 gap-4 h-16 mt-2 p-2 bg-base-200 rounded-box"
+  class="grid grid-cols-2 gap-4 h-16 mt-2 p-2 bg-base-200/50 rounded-box"
 >
-  <button class="btn btn-block btn-neutral" onclick={toggleClicking}
-    >{#if clicking}Stop{:else}Start{/if}
-    <kbd class="kbd">{config.main_keybind}</kbd></button
+  <button class="btn btn-block btn-neutral" onclick={clicking.toggle}
+    >{#if clicking.is_clicking}Stop{:else}Start{/if}
+    <kbd class="kbd">Alt/Opt+C</kbd></button
   >
   <button
     title="Not implemented"
@@ -475,9 +285,9 @@
 
 <div
   id="info"
-  class="flex flex-row h-8 bg-base-200 mt-2 items-center px-2 rounded-box"
+  class="flex flex-row h-8 bg-base-200/50 mt-2 items-center px-2 rounded-box"
 >
-  <div class="flex-grow flex">
+  <div class="grow flex">
     <a use:fixedAnchor href="https://github.com/mavdotjs/lambda-autoclicker">
       <svg viewBox="0 0 96 96" class="size-6" xmlns="http://www.w3.org/2000/svg"
         ><path
@@ -489,7 +299,7 @@
       >
     </a>
   </div>
-  <span class="text-neutral-content uppercase font-appbartop ml-2"
+  <span class="text-neutral-content font-appbartop ml-2"
     ><span class="border-b">© 2026 bronti.</span></span
   >
 </div>

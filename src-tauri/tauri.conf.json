@@ -42,7 +42,7 @@
     "createUpdaterArtifacts": true
   },
   "productName": "Lambda AutoClicker",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "identifier": "mavdotjs.lambdaclicker",
   "plugins": {
     "updater": {
