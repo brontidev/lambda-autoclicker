@@ -1,35 +1,76 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "lambda-autoclicker",
-  "version": "0.1.0",
-  "identifier": "dev.bronti.lambda-autoclicker",
   "build": {
-    "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
-    "frontendDist": "../build"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "lambda-autoclicker",
-        "width": 800,
-        "height": 600
-      }
-    ],
-    "security": {
-      "csp": null
-    }
+    "beforeBuildCommand": "npm run build:app",
+    "beforeDevCommand": "npm run dev",
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:1420"
   },
   "bundle": {
     "active": true,
+    "category": "DeveloperTool",
+    "publisher": "mavdotjs",
+    "copyright": "mavdotjs 2024",
     "targets": "all",
     "icon": [
-      "icons/32x32.png",
+      "icons/icon.icns",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
+      "icons/32x32.png",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "longDescription": "",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": [],
+    "shortDescription": "",
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "productName": "Lambda AutoClicker",
+  "version": "0.0.1",
+  "identifier": "mavdotjs.lambdaclicker",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI2M0Y5Rjg4NDI2QzFDRDQKUldUVUhHeENpSjgvdHB1MWpkVEF6N0VlUm9XeCtYT0JDNVRmZnJUekU3eE54eEs2OEhJNnZ2N0MK",
+      "endpoints": [
+        "https://github.com/mavdotjs/lambda-autoclicker/releases/latest/download/latest.json"
+      ]
+    }
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "λ AutoClicker",
+        "label": "main",
+        "fullscreen": false,
+        "url": "/app",
+        "center": true,
+        "height": 517,
+        "width": 800,
+        "resizable": false,
+        "decorations": true,
+        "minimizable": true
+      }
+    ],
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": null
+    }
   }
 }
