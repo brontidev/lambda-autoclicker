@@ -142,7 +142,6 @@ fn start_clicking(app: AppHandle) {
             spin_sleeper.sleep(delay);
         }
     }
-    println!("clicks: {}", clicks);
 
     // clear the atomic and notify UI
     is_clicking_arc.store(false, Ordering::SeqCst);
@@ -164,7 +163,6 @@ fn update_settings(
     state: TauriState,
     settings: AppSettingsData,
 ) -> Result<SnapshotEnvelope<AppSettingsData>, String> {
-    println!("!");
     let mut state = state.lock().unwrap();
     state.settings.data = settings;
     state.settings.revision = state.settings.revision.next();
@@ -270,7 +268,6 @@ pub fn run() {
             toggle_clicking
         ])
         .setup(|app| {
-            println!("{:#?}", get_settings_path(app.handle()));
             let enigo = Enigo::new(&Settings::default()).or(Err("Failed to load enigo"))?;
             app.manage(Mutex::new(AppState {
                 enigo: Arc::new(Mutex::new(enigo)),

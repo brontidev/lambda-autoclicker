@@ -18,7 +18,6 @@
         snippet,
       ]),
   ));
-  $inspect(options, value)
 </script>
 
 {#each Object.entries(options) as [option, snippet]}
