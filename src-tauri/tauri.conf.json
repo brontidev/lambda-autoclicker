@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeBuildCommand": "npm run build:app",
-    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "bun build:app",
+    "beforeDevCommand": "bun dev",
     "frontendDist": "../build",
     "devUrl": "http://localhost:1420"
   },
