@@ -16,19 +16,23 @@ jobs:
         include:
           - platform: 'blacksmith-6vcpu-macos-15' # for Arm based macs (M1 and above).
             args: '--target aarch64-apple-darwin'
+            type: 'mac'
           - platform: 'blacksmith-6vcpu-macos-15' # for Intel based macs.
             args: '--target x86_64-apple-darwin'
+            type: 'mac'
           - platform: 'blacksmith-2vcpu-ubuntu-2404-arm'
             args: ''
+            type: 'ubuntu'
           - platform: 'blacksmith-2vcpu-windows-2025'
             args: ''
+            type: 'windows'
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        if: matrix.type == 'ubuntu'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
@@ -42,7 +46,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
         with:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.type == 'mac' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
